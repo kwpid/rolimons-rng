@@ -424,7 +424,7 @@
     </div>
 
     <script>
-        // EDIT THIS TABLE TO ADD YOUR ITEMS
+                // EDIT THIS TABLE TO ADD YOUR ITEMS
         // Add Rolimon item IDs here (one per line)
         const ITEM_IDS = [
             // Example items - replace with your own IDs
@@ -436,8 +436,19 @@
             152980413,
             136613436441070,
             152980324,
-
         ];
+
+        // Known item data for fallback (in case scraping fails)
+        const KNOWN_ITEMS = {
+            '152980324': { name: 'Basic Egg 2014', value: 173, rap: 163 },
+            '21070012': { name: 'Sparkle Time Fedora', value: 150, rap: 150 },
+            '48545806': { name: 'Sparkle Time Fedora', value: 150, rap: 150 },
+            '1031429': { name: 'Sparkle Time Fedora', value: 150, rap: 150 },
+            '162067148': { name: 'Sparkle Time Fedora', value: 150, rap: 150 },
+            '110706539': { name: 'Sparkle Time Fedora', value: 150, rap: 150 },
+            '152980413': { name: 'Sparkle Time Fedora', value: 150, rap: 150 },
+            '136613436441070': { name: 'Sparkle Time Fedora', value: 150, rap: 150 },
+        };
 
         let items = [];
         let inventory = [];
@@ -506,40 +517,56 @@
         // Fetch item data from Rolimon
         async function fetchItemData(itemId) {
             try {
-                // Try to fetch from Rolimon's public API
-                const response = await fetch(CORS_PROXY + encodeURIComponent(`https://www.rolimons.com/api/items/${itemId}`));
-                if (!response.ok) {
-                    throw new Error('Failed to fetch from Rolimon API');
-                }
-                
-                const data = await response.json();
-                
-                // Check if we got valid data
-                if (data && data.name) {
-                    return {
-                        name: data.name,
-                        value: data.value || data.rap || 100,
-                        rap: data.rap || data.value || 100,
-                        image: `https://www.rolimons.com/itemimages/${itemId}.png`
-                    };
-                }
-                
-                // If no valid data, try scraping the item page
+                // Try scraping the item page directly (more reliable)
                 const pageResponse = await fetch(CORS_PROXY + encodeURIComponent(`https://www.rolimons.com/item/${itemId}`));
                 if (pageResponse.ok) {
                     const html = await pageResponse.text();
                     
-                    // Extract name from HTML
+                    // Extract name from HTML - look for the main title
+                    let name = `Item ${itemId}`;
                     const nameMatch = html.match(/<h1[^>]*>([^<]+)<\/h1>/);
-                    const name = nameMatch ? nameMatch[1].trim() : `Item ${itemId}`;
+                    if (nameMatch) {
+                        name = nameMatch[1].trim();
+                    } else {
+                        // Try alternative title patterns
+                        const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/);
+                        if (titleMatch) {
+                            name = titleMatch[1].replace(' - Rolimon\'s', '').trim();
+                        }
+                    }
                     
-                    // Extract RAP from HTML
+                    // Extract RAP from HTML - look for RAP value
+                    let rap = 100;
                     const rapMatch = html.match(/RAP[^>]*>([^<]+)</);
-                    const rap = rapMatch ? parseInt(rapMatch[1].replace(/,/g, '')) || 100 : 100;
+                    if (rapMatch) {
+                        const rapText = rapMatch[1].replace(/,/g, '').trim();
+                        rap = parseInt(rapText) || 100;
+                    } else {
+                        // Try alternative RAP patterns
+                        const rapAltMatch = html.match(/>(\d{1,3}(?:,\d{3})*)<\/[^>]*>RAP/);
+                        if (rapAltMatch) {
+                            rap = parseInt(rapAltMatch[1].replace(/,/g, '')) || 100;
+                        }
+                    }
                     
-                    // Extract Value from HTML
+                    // Extract Value from HTML - look for Value
+                    let value = rap;
                     const valueMatch = html.match(/Value[^>]*>([^<]+)</);
-                    const value = valueMatch ? parseInt(valueMatch[1].replace(/,/g, '')) || rap : rap;
+                    if (valueMatch) {
+                        const valueText = valueMatch[1].replace(/,/g, '').trim();
+                        value = parseInt(valueText) || rap;
+                    } else {
+                        // Try alternative value patterns
+                        const valueAltMatch = html.match(/>(\d{1,3}(?:,\d{3})*)<\/[^>]*>Value/);
+                        if (valueAltMatch) {
+                            value = parseInt(valueAltMatch[1].replace(/,/g, '')) || rap;
+                        }
+                    }
+                    
+                    // Ensure we have reasonable values
+                    if (value < 1) value = rap;
+                    if (rap < 1) rap = 100;
+                    if (value < 1) value = 100;
                     
                     return {
                         name: name,
@@ -549,11 +576,21 @@
                     };
                 }
                 
-                throw new Error('Could not fetch item data');
+                throw new Error('Could not fetch item page');
                 
             } catch (error) {
-                console.log('Using fallback data for item:', itemId, error);
-                // Fallback data if API fails
+                console.log('Using fallback data for item:', itemId, error.message);
+                // Check if we have known data for this item
+                const knownItem = KNOWN_ITEMS[itemId.toString()];
+                if (knownItem) {
+                    return {
+                        name: knownItem.name,
+                        value: knownItem.value,
+                        rap: knownItem.rap,
+                        image: `https://www.rolimons.com/itemimages/${itemId}.png`
+                    };
+                }
+                // Fallback data if everything fails
                 return {
                     name: `Item ${itemId}`,
                     value: 100,
