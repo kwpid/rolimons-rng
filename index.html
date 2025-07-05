@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rolimons RNG Game</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎲</text></svg>">
+    <title>Rolimon RNG Game</title>
     <style>
         * {
             margin: 0;
@@ -13,10 +12,11 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
-            background-color: #0d1117;
-            color: #c9d1d9;
-            line-height: 1.6;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
+            color: #ffffff;
+            min-height: 100vh;
+            overflow-x: hidden;
         }
 
         .container {
@@ -31,79 +31,86 @@
         }
 
         .header h1 {
-            color: #58a6ff;
-            font-size: 2.5rem;
+            font-size: 3rem;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1);
+            background-size: 200% 200%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: gradientShift 3s ease-in-out infinite;
             margin-bottom: 10px;
         }
 
-        .tabs {
+        @keyframes gradientShift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        .roll-section {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            padding: 40px;
+            margin-bottom: 30px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .roll-display {
             display: flex;
-            background-color: #21262d;
-            border-radius: 8px;
-            padding: 4px;
+            justify-content: center;
+            align-items: center;
+            min-height: 200px;
             margin-bottom: 30px;
         }
 
-        .tab {
-            flex: 1;
-            padding: 12px 20px;
-            background: none;
-            border: none;
-            color: #8b949e;
-            cursor: pointer;
-            border-radius: 6px;
-            transition: all 0.2s;
-            font-size: 16px;
-            font-weight: 500;
-        }
-
-        .tab.active {
-            background-color: #30363d;
-            color: #c9d1d9;
-        }
-
-        .tab:hover:not(.active) {
-            background-color: #30363d;
-            color: #c9d1d9;
-        }
-
-        .tab-content {
-            display: none;
-        }
-
-        .tab-content.active {
-            display: block;
-        }
-
-        .main-content {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 30px;
-        }
-
-        .rolling-section {
-            background-color: #21262d;
-            border-radius: 12px;
-            padding: 30px;
+        .roll-item {
             text-align: center;
+            opacity: 0;
+            transform: scale(0.5);
+            transition: all 0.5s ease;
+        }
+
+        .roll-item.show {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .roll-item img {
+            width: 120px;
+            height: 120px;
+            border-radius: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .roll-item h3 {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+            color: #4ecdc4;
+        }
+
+        .roll-item .value {
+            font-size: 1.2rem;
+            color: #ff6b6b;
+            font-weight: bold;
         }
 
         .roll-button {
-            background: linear-gradient(135deg, #58a6ff, #1f6feb);
-            color: white;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
             border: none;
             padding: 15px 40px;
-            font-size: 18px;
-            font-weight: 600;
-            border-radius: 8px;
+            font-size: 1.2rem;
+            color: white;
+            border-radius: 50px;
             cursor: pointer;
-            transition: all 0.3s;
-            margin-bottom: 20px;
+            transition: all 0.3s ease;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
 
         .roll-button:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(88, 166, 255, 0.3);
+            box-shadow: 0 10px 25px rgba(255, 107, 107, 0.3);
         }
 
         .roll-button:disabled {
@@ -112,239 +119,242 @@
             transform: none;
         }
 
-        .rolling-animation {
-            width: 200px;
-            height: 200px;
-            margin: 20px auto;
-            border-radius: 12px;
-            background: linear-gradient(45deg, #30363d, #484f58);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-            color: #58a6ff;
-            animation: spin 1s linear infinite;
-            display: none;
+        .rolling {
+            animation: rolling 0.5s ease-in-out infinite;
         }
 
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .current-roll {
-            background-color: #30363d;
-            border-radius: 12px;
-            padding: 20px;
-            margin-top: 20px;
-            display: none;
-        }
-
-        .item-image {
-            width: 100px;
-            height: 100px;
-            border-radius: 8px;
-            margin: 0 auto 15px;
-            display: block;
-        }
-
-        .item-name {
-            font-size: 18px;
-            font-weight: 600;
-            color: #58a6ff;
-            margin-bottom: 10px;
-        }
-
-        .item-stats {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            margin-top: 15px;
-        }
-
-        .stat {
-            background-color: #21262d;
-            padding: 8px 12px;
-            border-radius: 6px;
-            font-size: 14px;
-        }
-
-        .stat-label {
-            color: #8b949e;
-            font-size: 12px;
-            margin-bottom: 4px;
-        }
-
-        .best-rolls {
-            background-color: #21262d;
-            border-radius: 12px;
-            padding: 20px;
-            max-height: 600px;
-            overflow-y: auto;
-        }
-
-        .best-rolls h3 {
-            color: #58a6ff;
-            margin-bottom: 20px;
-            text-align: center;
-        }
-
-        .best-roll-item {
-            background-color: #30363d;
-            border-radius: 8px;
-            padding: 15px;
-            margin-bottom: 15px;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .best-roll-image {
-            width: 60px;
-            height: 60px;
-            border-radius: 6px;
-            flex-shrink: 0;
-        }
-
-        .best-roll-info {
-            flex: 1;
-        }
-
-        .best-roll-name {
-            font-weight: 600;
-            color: #c9d1d9;
-            margin-bottom: 5px;
-        }
-
-        .best-roll-value {
-            color: #58a6ff;
-            font-weight: 600;
+        @keyframes rolling {
+            0%, 100% { transform: rotate(0deg); }
+            25% { transform: rotate(5deg); }
+            75% { transform: rotate(-5deg); }
         }
 
         .inventory-section {
-            background-color: #21262d;
-            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
             padding: 30px;
+            margin-bottom: 30px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .inventory-section h2 {
+            margin-bottom: 20px;
+            color: #4ecdc4;
+            font-size: 2rem;
         }
 
         .inventory-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 20px;
-            max-height: 600px;
-            overflow-y: auto;
-        }
-
-        .inventory-item {
-            background-color: #30363d;
-            border-radius: 8px;
-            padding: 15px;
-            text-align: center;
-            transition: transform 0.2s;
-        }
-
-        .inventory-item:hover {
-            transform: translateY(-2px);
-        }
-
-        .inventory-image {
-            width: 80px;
-            height: 80px;
-            border-radius: 6px;
-            margin: 0 auto 10px;
-        }
-
-        .inventory-name {
-            font-weight: 600;
-            color: #c9d1d9;
-            margin-bottom: 8px;
-            font-size: 14px;
-        }
-
-        .inventory-stats {
-            font-size: 12px;
-            color: #8b949e;
-        }
-
-        .chances-section {
-            background-color: #21262d;
-            border-radius: 12px;
-            padding: 30px;
-        }
-
-        .chances-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-            gap: 20px;
-            max-height: 600px;
-            overflow-y: auto;
-        }
-
-        .chance-item {
-            background-color: #30363d;
-            border-radius: 8px;
-            padding: 15px;
-            display: flex;
-            align-items: center;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
             gap: 15px;
         }
 
-        .chance-image {
-            width: 60px;
-            height: 60px;
-            border-radius: 6px;
-            flex-shrink: 0;
+        .inventory-item {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 15px;
+            text-align: center;
+            transition: all 0.3s ease;
         }
 
-        .chance-info {
-            flex: 1;
+        .inventory-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
         }
 
-        .chance-name {
-            font-weight: 600;
-            color: #c9d1d9;
+        .inventory-item img {
+            width: 80px;
+            height: 80px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+        }
+
+        .inventory-item h4 {
+            font-size: 0.9rem;
             margin-bottom: 5px;
+            color: #ffffff;
         }
 
-        .chance-value {
-            color: #58a6ff;
-            font-weight: 600;
+        .inventory-item .value {
+            font-size: 0.8rem;
+            color: #ff6b6b;
+            font-weight: bold;
         }
 
-        .chance-ratio {
-            color: #8b949e;
-            font-size: 14px;
+        .items-section {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            padding: 30px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .items-section h2 {
+            margin-bottom: 20px;
+            color: #4ecdc4;
+            font-size: 2rem;
+        }
+
+        .item-input {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .item-input input {
+            flex: 1;
+            min-width: 200px;
+            padding: 12px;
+            border: none;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 1rem;
+        }
+
+        .item-input input::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .add-button {
+            background: linear-gradient(45deg, #4ecdc4, #45b7d1);
+            border: none;
+            padding: 12px 20px;
+            color: white;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .add-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(78, 205, 196, 0.3);
+        }
+
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .items-table th,
+        .items-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .items-table th {
+            background: rgba(255, 255, 255, 0.1);
+            font-weight: bold;
+            color: #4ecdc4;
+        }
+
+        .items-table tr:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .items-table img {
+            width: 40px;
+            height: 40px;
+            border-radius: 5px;
+        }
+
+        .remove-button {
+            background: #ff6b6b;
+            border: none;
+            padding: 5px 10px;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+
+        .remove-button:hover {
+            background: #ff5252;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            min-width: 150px;
+        }
+
+        .stat-card h3 {
+            color: #4ecdc4;
+            margin-bottom: 10px;
+        }
+
+        .stat-card .value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #ff6b6b;
         }
 
         .loading {
-            text-align: center;
-            padding: 40px;
-            color: #8b949e;
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #4ecdc4;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
         }
 
         .error {
-            background-color: #da3633;
-            color: white;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
+            background: rgba(255, 107, 107, 0.2);
+            color: #ff6b6b;
+            padding: 10px;
+            border-radius: 10px;
+            margin: 10px 0;
+            border: 1px solid rgba(255, 107, 107, 0.3);
         }
 
         .success {
-            background-color: #238636;
-            color: white;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
+            background: rgba(78, 205, 196, 0.2);
+            color: #4ecdc4;
+            padding: 10px;
+            border-radius: 10px;
+            margin: 10px 0;
+            border: 1px solid rgba(78, 205, 196, 0.3);
         }
 
         @media (max-width: 768px) {
-            .main-content {
-                grid-template-columns: 1fr;
+            .container {
+                padding: 10px;
             }
             
-            .tabs {
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .roll-section {
+                padding: 20px;
+            }
+            
+            .item-input {
                 flex-direction: column;
+            }
+            
+            .item-input input {
+                min-width: auto;
             }
         }
     </style>
@@ -352,598 +362,347 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>🎲 Rolimons RNG Game</h1>
-            <p>Roll for Roblox Limiteds using real market data</p>
+            <h1>Rolimon RNG</h1>
+            <p>Roll for rare Roblox items!</p>
         </div>
 
-        <div class="tabs">
-            <button class="tab active" onclick="showTab('main')">Main</button>
-            <button class="tab" onclick="showTab('inventory')">Inventory</button>
-            <button class="tab" onclick="showTab('chances')">Chances</button>
-        </div>
-
-        <!-- Main Tab -->
-        <div id="main" class="tab-content active">
-            <div class="main-content">
-                <div class="rolling-section">
-                    <button id="rollButton" class="roll-button" onclick="roll()">🎲 Roll for Items!</button>
-                    <div id="rollingAnimation" class="rolling-animation">🎲</div>
-                    <div id="currentRoll" class="current-roll"></div>
+        <div class="roll-section">
+            <div class="stats">
+                <div class="stat-card">
+                    <h3>Total Rolls</h3>
+                    <div class="value" id="totalRolls">0</div>
                 </div>
-                <div class="best-rolls">
-                    <h3>🏆 Best Rolls (250K+ Value)</h3>
-                    <div id="bestRollsList"></div>
+                <div class="stat-card">
+                    <h3>Total Value Won</h3>
+                    <div class="value" id="totalValue">0</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Best Item</h3>
+                    <div class="value" id="bestItem">None</div>
+                </div>
+            </div>
+
+            <div class="roll-display" id="rollDisplay">
+                <div class="roll-item" id="rollItem">
+                    <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIwIiBoZWlnaHQ9IjEyMCIgdmlld0JveD0iMCAwIDEyMCAxMjAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxMjAiIGhlaWdodD0iMTIwIiByeD0iMTUiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsMC4xKSIvPgo8dGV4dCB4PSI2MCIgeT0iNjAiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0icmdiYSgyNTUsMjU1LDI1NSwwLjUpIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+Um9sbCB0byBTdGFydCE8L3RleHQ+Cjwvc3ZnPgo=" alt="Roll to start">
+                    <h3>Roll to Start!</h3>
+                    <div class="value">Click the button below</div>
+                </div>
+            </div>
+
+            <div style="text-align: center;">
+                <button class="roll-button" id="rollButton" onclick="roll()">ROLL NOW</button>
+            </div>
+        </div>
+
+        <div class="inventory-section">
+            <h2>Your Inventory</h2>
+            <div class="inventory-grid" id="inventoryGrid">
+                <div style="text-align: center; color: rgba(255,255,255,0.6); padding: 40px;">
+                    No items won yet. Start rolling!
                 </div>
             </div>
         </div>
 
-        <!-- Inventory Tab -->
-        <div id="inventory" class="tab-content">
-            <div class="inventory-section">
-                <h3>📦 Available Items</h3>
-                <div id="inventoryGrid" class="inventory-grid">
-                    <div class="loading">Loading inventory...</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Chances Tab -->
-        <div id="chances" class="tab-content">
-            <div class="chances-section">
-                <h3>📊 Roll Chances</h3>
-                <div id="chancesGrid" class="chances-grid">
-                    <div class="loading">Loading chances...</div>
-                </div>
-            </div>
+        <div class="items-section">
+            <h2>Item Database</h2>
+            <div id="messageArea"></div>
+            <table class="items-table" id="itemsTable">
+                <thead>
+                    <tr>
+                        <th>Image</th>
+                        <th>Name</th>
+                        <th>Value</th>
+                        <th>RAP</th>
+                        <th>Chance</th>
+                    </tr>
+                </thead>
+                <tbody id="itemsTableBody">
+                </tbody>
+            </table>
         </div>
     </div>
 
     <script>
-        let items = [];
-        let bestRolls = [];
-        let isRolling = false;
-        let itemCache = new Map(); // Cache for loaded items
-        let rollHistory = []; // Track items shown during rolling animation
+        // EDIT THIS TABLE TO ADD YOUR ITEMS
+        // Add Rolimon item IDs here (one per line)
+        const ITEM_IDS = [
+            // Example items - replace with your own IDs
+            21070012,  
+            48545806, 
+            1031429,  
+            162067148,
+            110706539,
+            152980413,
+            136613436441070,
+            152980324,
 
-        // Item links table - add your Rolimons item links here
-        const ITEM_LINKS = [
-            // Format: "https://www.rolimons.com/item/ITEM_ID"
-            // Example items (replace with actual Rolimons links):
-            "https://www.rolimons.com/item/21070012",
-            "https://www.rolimons.com/item/48545806",
-            "https://www.rolimons.com/item/1031429",
-            "https://www.rolimons.com/item/124730194"
-            // Add more item links here...
         ];
 
+        let items = [];
+        let inventory = [];
+        let totalRolls = 0;
+        let totalValue = 0;
+        let bestItem = null;
 
+        // CORS proxy for Rolimon API
+        const CORS_PROXY = 'https://api.allorigins.win/raw?url=';
+        const ROLIMON_API = 'https://www.rolimons.com/api/items';
 
-        // Tab switching
-        function showTab(tabName) {
-            // Hide all tab contents
-            document.querySelectorAll('.tab-content').forEach(content => {
-                content.classList.remove('active');
-            });
-            
-            // Remove active class from all tabs
-            document.querySelectorAll('.tab').forEach(tab => {
-                tab.classList.remove('active');
-            });
-            
-            // Show selected tab content
-            document.getElementById(tabName).classList.add('active');
-            
-            // Add active class to clicked tab
-            event.target.classList.add('active');
-        }
-
-        // Initialize with minimal data
-        async function initializeGame() {
-            // Load cached items from session storage
-            const cachedItems = sessionStorage.getItem('rolimonsRngCache');
-            if (cachedItems) {
+        // Load items from hardcoded table and localStorage
+        async function loadItems() {
+            // Load items from hardcoded ITEM_IDS table
+            for (const itemId of ITEM_IDS) {
                 try {
-                    const parsed = JSON.parse(cachedItems);
-                    itemCache = new Map(parsed);
-                    console.log(`Loaded ${itemCache.size} cached items`);
-                } catch (e) {
-                    console.log('Failed to load cache, starting fresh');
-                }
-            }
-            
-            // Load a small initial set for display
-            await loadInitialItems();
-            showSuccess('RNG Game ready! Click "Roll for Items!" to start.');
-        }
-
-        // Load initial items for display
-        async function loadInitialItems() {
-            try {
-                // Fetch items from the links table
-                const fetchedItems = await fetchItemsFromLinks();
-                
-                if (fetchedItems.length > 0) {
-                    // Cache all fetched items
-                    fetchedItems.forEach(item => itemCache.set(item.id, item));
-                    
-                    // Use all items for display
-                    items = fetchedItems.sort((a, b) => b.value - a.value);
-                    
-                    displayInventory();
-                    displayChances();
-                    showSuccess(`Successfully loaded ${fetchedItems.length} items from Rolimons!`);
-                } else {
-                    showError('No items were loaded. Please check your ITEM_LINKS array.');
-                }
-                
-            } catch (error) {
-                console.error('Error loading items:', error);
-                showError('Failed to load items. Please check your internet connection and item links.');
-            }
-        }
-
-        // Fetch items from individual Rolimons links
-        async function fetchItemsFromLinks() {
-            const items = [];
-            
-            for (let i = 0; i < ITEM_LINKS.length; i++) {
-                try {
-                    const link = ITEM_LINKS[i];
-                    const itemId = extractItemIdFromLink(link);
-                    
-                    if (itemId) {
-                        const item = await fetchItemFromLink(link, itemId);
-                        if (item) {
-                            items.push(item);
-                        }
-                    }
-                    
-                    // Small delay between requests
-                    await new Promise(resolve => setTimeout(resolve, 100));
-                    
+                    const itemData = await fetchItemData(itemId);
+                    const newItem = {
+                        id: itemId.toString(),
+                        name: itemData.name,
+                        value: itemData.value,
+                        rap: itemData.rap,
+                        image: itemData.image
+                    };
+                    items.push(newItem);
                 } catch (error) {
-                    console.log(`Failed to fetch item from link ${i + 1}:`, error);
-                    // Generate placeholder for failed items
-                    const itemId = extractItemIdFromLink(ITEM_LINKS[i]);
-                    if (itemId) {
-                        items.push(generatePlaceholderItem(itemId));
-                    }
+                    console.log('Failed to load item:', itemId);
                 }
             }
             
-            return items;
-        }
-
-        // Extract item ID from Rolimons link
-        function extractItemIdFromLink(link) {
-            const match = link.match(/\/item\/(\d+)/);
-            return match ? match[1] : null;
-        }
-
-        // Pre-defined item data for your specific items
-        const PREDEFINED_ITEMS = {
-            "21070012": {
-                id: "21070012",
-                name: "Dominus Empyreus",
-                value: 500000,
-                rap: 450000,
-                image: "https://via.placeholder.com/100x100/58a6ff/ffffff?text=DE",
-                owners: 150,
-                stock: 150
-            },
-            "48545806": {
-                id: "48545806",
-                name: "Sparkle Time Fedora",
-                value: 300000,
-                rap: 280000,
-                image: "https://via.placeholder.com/100x100/58a6ff/ffffff?text=STF",
-                owners: 200,
-                stock: 200
-            },
-            "1031429": {
-                id: "1031429",
-                name: "Golden Crown",
-                value: 250000,
-                rap: 240000,
-                image: "https://via.placeholder.com/100x100/58a6ff/ffffff?text=GC",
-                owners: 180,
-                stock: 180
-            },
-            "124730194": {
-                id: "124730194",
-                name: "Dominus Aureus",
-                value: 400000,
-                rap: 380000,
-                image: "https://via.placeholder.com/100x100/58a6ff/ffffff?text=DA",
-                owners: 120,
-                stock: 120
-            }
-        };
-
-        // Fetch individual item from Rolimons link using CORS proxy
-        async function fetchItemFromLink(link, itemId) {
-            try {
-                // First check if we have predefined data for this item
-                if (PREDEFINED_ITEMS[itemId]) {
-                    console.log(`Using predefined data for item ${itemId}`);
-                    return PREDEFINED_ITEMS[itemId];
-                }
-
-                // Try a more reliable CORS proxy
-                const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(link)}`;
-                
-                const response = await fetch(proxyUrl, {
-                    method: 'GET',
-                    headers: {
-                        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8'
-                    }
-                });
-                
-                if (response.ok) {
-                    const html = await response.text();
-                    const item = parseItemFromHTML(html, itemId);
-                    if (item) {
-                        console.log(`Successfully fetched item ${itemId} using proxy`);
-                        return item;
-                    }
-                }
-                
-                // If proxy fails, generate a placeholder item
-                console.log(`Proxy failed for item ${itemId}, generating placeholder`);
-                return generatePlaceholderItem(itemId);
-                
-            } catch (error) {
-                console.log(`Error fetching item ${itemId}:`, error);
-                return generatePlaceholderItem(itemId);
-            }
-        }
-
-        // Generate a placeholder item when fetching fails
-        function generatePlaceholderItem(itemId) {
-            const value = Math.floor(Math.random() * 500000) + 50000;
-            const rap = Math.floor(value * 0.9);
-            const owners = Math.floor(Math.random() * 250) + 1;
+            updateItemsTable();
             
-            return {
-                id: itemId,
-                name: `Limited Item ${itemId}`,
-                value: value,
-                rap: rap,
-                image: `https://via.placeholder.com/100x100/58a6ff/ffffff?text=LI${itemId}`,
-                owners: owners,
-                stock: owners
-            };
+            const savedInventory = localStorage.getItem('rolimonRngInventory');
+            if (savedInventory) {
+                inventory = JSON.parse(savedInventory);
+                updateInventory();
+            }
+            
+            const savedStats = localStorage.getItem('rolimonRngStats');
+            if (savedStats) {
+                const stats = JSON.parse(savedStats);
+                totalRolls = stats.totalRolls || 0;
+                totalValue = stats.totalValue || 0;
+                bestItem = stats.bestItem || null;
+                updateStats();
+            }
         }
 
-        // Parse item data from Rolimons HTML page
-        function parseItemFromHTML(html, itemId) {
+        // Save items to localStorage (not needed for hardcoded items, but kept for compatibility)
+        function saveItems() {
+            // Items are now loaded from hardcoded table, so no need to save
+        }
+
+        function saveInventory() {
+            localStorage.setItem('rolimonRngInventory', JSON.stringify(inventory));
+        }
+
+        function saveStats() {
+            localStorage.setItem('rolimonRngStats', JSON.stringify({
+                totalRolls,
+                totalValue,
+                bestItem
+            }));
+        }
+
+        // Fetch item data from Rolimon
+        async function fetchItemData(itemId) {
             try {
-                // Extract item name
-                const nameMatch = html.match(/<title>([^<]+)<\/title>/);
-                const name = nameMatch ? nameMatch[1].replace(' - Rolimons', '').trim() : `Item ${itemId}`;
+                // First try to get from Rolimon API
+                const response = await fetch(CORS_PROXY + encodeURIComponent(`${ROLIMON_API}/${itemId}`));
+                if (!response.ok) {
+                    throw new Error('Failed to fetch from Rolimon API');
+                }
                 
-                // Extract value and RAP from script tags or meta tags
-                const valueMatch = html.match(/"value":\s*(\d+)/);
-                const rapMatch = html.match(/"rap":\s*(\d+)/);
-                const ownersMatch = html.match(/"owners":\s*(\d+)/);
+                const data = await response.json();
                 
-                const value = valueMatch ? parseInt(valueMatch[1]) : Math.floor(Math.random() * 500000) + 50000;
-                const rap = rapMatch ? parseInt(rapMatch[1]) : Math.floor(value * 0.9);
-                const owners = ownersMatch ? parseInt(ownersMatch[1]) : Math.floor(Math.random() * 250) + 1;
-                
-                // Extract image URL
-                const imageMatch = html.match(/<img[^>]+src="([^"]*)"[^>]*class="[^"]*item-image[^"]*"/);
-                const image = imageMatch ? imageMatch[1] : `https://via.placeholder.com/100x100/58a6ff/ffffff?text=${itemId}`;
+                // If Rolimon API fails, use fallback data
+                if (!data || !data.name) {
+                    return {
+                        name: `Item ${itemId}`,
+                        value: Math.floor(Math.random() * 1000) + 1,
+                        rap: Math.floor(Math.random() * 500) + 1,
+                        image: `https://www.rolimons.com/itemimages/${itemId}.png`
+                    };
+                }
                 
                 return {
-                    id: itemId,
-                    name: name,
-                    value: value,
-                    rap: rap,
-                    image: image,
-                    owners: owners,
-                    stock: owners <= 250 ? owners : Math.floor(Math.random() * 100) + 1
+                    name: data.name || `Item ${itemId}`,
+                    value: data.value || Math.floor(Math.random() * 1000) + 1,
+                    rap: data.rap || Math.floor(Math.random() * 500) + 1,
+                    image: data.image || `https://www.rolimons.com/itemimages/${itemId}.png`
                 };
-                
             } catch (error) {
-                console.log(`Error parsing item ${itemId}:`, error);
-                return null;
+                console.log('Using fallback data for item:', itemId);
+                // Fallback data if API fails
+                return {
+                    name: `Item ${itemId}`,
+                    value: Math.floor(Math.random() * 1000) + 1,
+                    rap: Math.floor(Math.random() * 500) + 1,
+                    image: `https://www.rolimons.com/itemimages/${itemId}.png`
+                };
             }
         }
 
-        // Save cache to session storage
-        function saveCache() {
-            try {
-                const cacheArray = Array.from(itemCache.entries());
-                sessionStorage.setItem('rolimonsRngCache', JSON.stringify(cacheArray));
-            } catch (e) {
-                console.log('Failed to save cache');
-            }
-        }
+        // Add item to database (removed - items are now hardcoded)
+        // To add items, edit the ITEM_IDS array at the top of the script
 
-        // Display inventory
-        function displayInventory() {
-            const grid = document.getElementById('inventoryGrid');
-            grid.innerHTML = '';
-
-            items.slice(0, 100).forEach(item => {
-                const itemDiv = document.createElement('div');
-                itemDiv.className = 'inventory-item';
-                
-                const stock = item.owners <= 250 ? item.owners : (item.stock || 'N/A');
-                
-                itemDiv.innerHTML = `
-                    <img src="${item.image}" alt="${item.name}" class="inventory-image" onerror="this.src='https://via.placeholder.com/80x80/30363d/8b949e?text=?'">
-                    <div class="inventory-name">${item.name}</div>
-                    <div class="inventory-stats">
-                        <div>Value: ${formatNumber(item.value)}</div>
-                        <div>RAP: ${formatNumber(item.rap)}</div>
-                        <div>Stock: ${stock}</div>
-                    </div>
-                `;
-                
-                grid.appendChild(itemDiv);
-            });
-        }
-
-        // Display chances
-        function displayChances() {
-            const grid = document.getElementById('chancesGrid');
-            grid.innerHTML = '';
-
-            items.slice(0, 50).forEach(item => {
-                const chance = Math.max(1, Math.floor(item.value / 50));
-                const itemDiv = document.createElement('div');
-                itemDiv.className = 'chance-item';
-                
-                itemDiv.innerHTML = `
-                    <img src="${item.image}" alt="${item.name}" class="chance-image" onerror="this.src='https://via.placeholder.com/60x60/30363d/8b949e?text=?'">
-                    <div class="chance-info">
-                        <div class="chance-name">${item.name}</div>
-                        <div class="chance-value">${formatNumber(item.value)}</div>
-                        <div class="chance-ratio">1 in ${chance}</div>
-                    </div>
-                `;
-                
-                grid.appendChild(itemDiv);
-            });
-        }
-
-        // Roll function with dynamic animation
-        async function roll() {
-            if (isRolling) return;
-            
-            isRolling = true;
-            const rollButton = document.getElementById('rollButton');
-            const rollingAnimation = document.getElementById('rollingAnimation');
-            const currentRoll = document.getElementById('currentRoll');
-            
-            rollButton.disabled = true;
-            rollingAnimation.style.display = 'flex';
-            currentRoll.style.display = 'none';
-            
-            // Clear previous roll history
-            rollHistory = [];
-            
-            // Generate random items for rolling animation
-            await generateRollingItems();
-            
-            // Simulate rolling animation with random items
-            await performRollingAnimation();
-            
-            // Select final item based on value-weighted probability
-            const selectedItem = selectRandomItem();
-            
-            // Display final result
-            displayRollResult(selectedItem);
-            
-            // Check if it's a best roll
-            if (selectedItem.value >= 250000) {
-                addBestRoll(selectedItem);
-            }
-            
-            rollingAnimation.style.display = 'none';
-            currentRoll.style.display = 'block';
-            rollButton.disabled = false;
-            isRolling = false;
-            
-            // Save cache after roll
-            saveCache();
-        }
-
-        // Generate random items for rolling animation
-        async function generateRollingItems() {
-            const numItems = 15; // Number of items to show during animation
-            
-            for (let i = 0; i < numItems; i++) {
-                const item = await getRandomItem();
-                rollHistory.push(item);
-            }
-        }
-
-        // Get a random item (either from cache or generate new)
-        async function getRandomItem() {
-            // 70% chance to get from cache, 30% chance to generate new
-            if (itemCache.size > 0 && Math.random() < 0.7) {
-                const cachedItems = Array.from(itemCache.values());
-                return cachedItems[Math.floor(Math.random() * cachedItems.length)];
-            } else {
-                return generateNewItem();
-            }
-        }
-
-        // Generate a new random item
-        function generateNewItem() {
-            const value = Math.floor(Math.random() * 800000) + 50000;
-            const rap = Math.floor(value * 0.9);
-            const owners = Math.floor(Math.random() * 250) + 1;
-            const id = Date.now() + Math.random(); // Unique ID
-            
-            const item = {
-                id: id,
-                name: `Limited Item ${Math.floor(Math.random() * 1000)}`,
-                value: value,
-                rap: rap,
-                image: `https://via.placeholder.com/100x100/58a6ff/ffffff?text=LI${Math.floor(Math.random() * 100)}`,
-                owners: owners,
-                stock: owners
-            };
-            
-            // Cache the new item
-            itemCache.set(id, item);
-            return item;
-        }
-
-        // Perform the rolling animation
-        async function performRollingAnimation() {
-            const rollingAnimation = document.getElementById('rollingAnimation');
-            const duration = 2000; // 2 seconds
-            const interval = 100; // Change item every 100ms
-            const steps = duration / interval;
-            
-            for (let i = 0; i < steps; i++) {
-                const item = rollHistory[i % rollHistory.length];
-                displayRollingItem(item);
-                await new Promise(resolve => setTimeout(resolve, interval));
-            }
-        }
-
-        // Display item during rolling animation
-        function displayRollingItem(item) {
-            const rollingAnimation = document.getElementById('rollingAnimation');
-            rollingAnimation.innerHTML = `
-                <div style="text-align: center;">
-                    <img src="${item.image}" alt="${item.name}" style="width: 80px; height: 80px; border-radius: 8px; margin-bottom: 10px;" onerror="this.src='https://via.placeholder.com/80x80/30363d/8b949e?text=?'">
-                    <div style="font-size: 14px; color: #58a6ff; font-weight: 600;">${item.name}</div>
-                    <div style="font-size: 12px; color: #8b949e;">${formatNumber(item.value)}</div>
-                </div>
-            `;
-        }
-
-        // Select random item with value-weighted probability from all cached items
-        function selectRandomItem() {
-            const allItems = Array.from(itemCache.values());
-            
-            if (allItems.length === 0) {
-                return generateNewItem();
-            }
-            
-            const totalWeight = allItems.reduce((sum, item) => sum + (1 / Math.max(1, Math.floor(item.value / 50))), 0);
-            let random = Math.random() * totalWeight;
-            
-            for (const item of allItems) {
-                const weight = 1 / Math.max(1, Math.floor(item.value / 50));
-                random -= weight;
-                if (random <= 0) {
-                    return item;
-                }
-            }
-            
-            return allItems[0]; // Fallback
-        }
-
-        // Display roll result
-        function displayRollResult(item) {
-            const currentRoll = document.getElementById('currentRoll');
-            const stock = item.owners <= 250 ? item.owners : (item.stock || 'N/A');
-            
-            currentRoll.innerHTML = `
-                <img src="${item.image}" alt="${item.name}" class="item-image" onerror="this.src='https://via.placeholder.com/100x100/30363d/8b949e?text=?'">
-                <div class="item-name">${item.name}</div>
-                <div class="item-stats">
-                    <div class="stat">
-                        <div class="stat-label">Value</div>
-                        <div>${formatNumber(item.value)}</div>
-                    </div>
-                    <div class="stat">
-                        <div class="stat-label">RAP</div>
-                        <div>${formatNumber(item.rap)}</div>
-                    </div>
-                    <div class="stat">
-                        <div class="stat-label">Stock</div>
-                        <div>${stock}</div>
-                    </div>
-                    <div class="stat">
-                        <div class="stat-label">Chance</div>
-                        <div>1 in ${Math.max(1, Math.floor(item.value / 50))}</div>
-                    </div>
-                </div>
-            `;
-        }
-
-        // Add best roll
-        function addBestRoll(item) {
-            const existingIndex = bestRolls.findIndex(roll => roll.id === item.id);
-            if (existingIndex !== -1) {
-                bestRolls.splice(existingIndex, 1);
-            }
-            
-            bestRolls.unshift({
-                ...item,
-                timestamp: Date.now()
-            });
-            
-            // Keep only top 10 best rolls
-            bestRolls = bestRolls.slice(0, 10);
-            
-            displayBestRolls();
-        }
-
-        // Display best rolls
-        function displayBestRolls() {
-            const list = document.getElementById('bestRollsList');
-            list.innerHTML = '';
-            
-            bestRolls.forEach(roll => {
-                const rollDiv = document.createElement('div');
-                rollDiv.className = 'best-roll-item';
-                
-                rollDiv.innerHTML = `
-                    <img src="${roll.image}" alt="${roll.name}" class="best-roll-image" onerror="this.src='https://via.placeholder.com/60x60/30363d/8b949e?text=?'">
-                    <div class="best-roll-info">
-                        <div class="best-roll-name">${roll.name}</div>
-                        <div class="best-roll-value">${formatNumber(roll.value)}</div>
-                    </div>
-                `;
-                
-                list.appendChild(rollDiv);
-            });
-        }
-
-        // Format numbers with commas
-        function formatNumber(num) {
-            return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-        }
-
-        // Show error message
-        function showError(message) {
-            const container = document.querySelector('.container');
-            const errorDiv = document.createElement('div');
-            errorDiv.className = 'error';
-            errorDiv.textContent = message;
-            container.insertBefore(errorDiv, container.firstChild);
-            
+        // Show message
+        function showMessage(message, type) {
+            const messageArea = document.getElementById('messageArea');
+            messageArea.innerHTML = `<div class="${type}">${message}</div>`;
             setTimeout(() => {
-                errorDiv.remove();
-            }, 5000);
-        }
-
-        // Show success message
-        function showSuccess(message) {
-            const container = document.querySelector('.container');
-            const successDiv = document.createElement('div');
-            successDiv.className = 'success';
-            successDiv.textContent = message;
-            container.insertBefore(successDiv, container.firstChild);
-            
-            setTimeout(() => {
-                successDiv.remove();
+                messageArea.innerHTML = '';
             }, 3000);
         }
 
+        // Update items table
+        function updateItemsTable() {
+            const tbody = document.getElementById('itemsTableBody');
+            tbody.innerHTML = '';
+            
+            items.forEach(item => {
+                const row = document.createElement('tr');
+                const chance = Math.max(1, Math.floor(50 / item.value));
+                row.innerHTML = `
+                    <td><img src="${item.image}" alt="${item.name}" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiByeD0iNSIgZmlsbD0icmdiYSgyNTUsMjU1LDIU1LDAuMSkiLz4KPC9zdmc+Cg=='"></td>
+                    <td>${item.name}</td>
+                    <td>${item.value.toLocaleString()}</td>
+                    <td>${item.rap.toLocaleString()}</td>
+                    <td>1 in ${chance}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // Remove item from database (removed - items are now hardcoded)
+        // To remove items, edit the ITEM_IDS array at the top of the script
+
+        // Roll function
+        async function roll() {
+            if (items.length === 0) {
+                showMessage('Add some items to the database first!', 'error');
+                return;
+            }
+            
+            const rollButton = document.getElementById('rollButton');
+            const rollItem = document.getElementById('rollItem');
+            
+            rollButton.disabled = true;
+            rollButton.textContent = 'ROLLING...';
+            rollItem.classList.add('rolling');
+            
+            // Simulate rolling animation
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            
+            // Calculate weighted random selection
+            const totalWeight = items.reduce((sum, item) => sum + (50 / item.value), 0);
+            let random = Math.random() * totalWeight;
+            
+            let selectedItem = null;
+            for (const item of items) {
+                const weight = 50 / item.value;
+                random -= weight;
+                if (random <= 0) {
+                    selectedItem = item;
+                    break;
+                }
+            }
+            
+            // If no item selected (shouldn't happen), pick random
+            if (!selectedItem) {
+                selectedItem = items[Math.floor(Math.random() * items.length)];
+            }
+            
+            // Update roll display
+            rollItem.innerHTML = `
+                <img src="${selectedItem.image}" alt="${selectedItem.name}" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIwIiBoZWlnaHQ9IjEyMCIgdmlld0JveD0iMCAwIDEyMCAxMjAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxMjAiIGhlaWdodD0iMTIwIiByeD0iMTUiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsMC4xKSIvPgo8L3N2Zz4K'">
+                <h3>${selectedItem.name}</h3>
+                <div class="value">Value: ${selectedItem.value.toLocaleString()}</div>
+            `;
+            
+            rollItem.classList.remove('rolling');
+            rollItem.classList.add('show');
+            
+            // Add to inventory
+            inventory.push({
+                ...selectedItem,
+                wonAt: new Date().toISOString()
+            });
+            
+            // Update stats
+            totalRolls++;
+            totalValue += selectedItem.value;
+            
+            if (!bestItem || selectedItem.value > bestItem.value) {
+                bestItem = selectedItem;
+            }
+            
+            updateInventory();
+            updateStats();
+            saveInventory();
+            saveStats();
+            
+            // Reset button
+            rollButton.disabled = false;
+            rollButton.textContent = 'ROLL NOW';
+            
+            // Hide roll item after 3 seconds
+            setTimeout(() => {
+                rollItem.classList.remove('show');
+                setTimeout(() => {
+                    rollItem.innerHTML = `
+                        <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIwIiBoZWlnaHQ9IjEyMCIgdmlld0JveD0iMCAwIDEyMCAxMjAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxMjAiIGhlaWdodD0iMTIwIiByeD0iMTUiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsMC4xKSIvPgo8dGV4dCB4PSI2MCIgeT0iNjAiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0icmdiYSgyNTUsMjU1LDI1NSwwLjUpIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+Um9sbCB0byBTdGFydCE8L3RleHQ+Cjwvc3ZnPgo=" alt="Roll to start">
+                        <h3>Roll to Start!</h3>
+                        <div class="value">Click the button below</div>
+                    `;
+                }, 500);
+            }, 3000);
+        }
+
+        // Update inventory display
+        function updateInventory() {
+            const inventoryGrid = document.getElementById('inventoryGrid');
+            
+            if (inventory.length === 0) {
+                inventoryGrid.innerHTML = `
+                    <div style="text-align: center; color: rgba(255,255,255,0.6); padding: 40px;">
+                        No items won yet. Start rolling!
+                    </div>
+                `;
+                return;
+            }
+            
+            inventoryGrid.innerHTML = '';
+            
+            inventory.forEach(item => {
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'inventory-item';
+                itemDiv.innerHTML = `
+                    <img src="${item.image}" alt="${item.name}" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAiIGhlaWdodD0iODAiIHZpZXdCb3g9IjAgMCA4MCA4MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjgwIiBoZWlnaHQ9IjgwIiByeD0iMTAiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsMC4xKSIvPgo8L3N2Zz4K'">
+                    <h4>${item.name}</h4>
+                    <div class="value">${item.value.toLocaleString()}</div>
+                `;
+                inventoryGrid.appendChild(itemDiv);
+            });
+        }
+
+        // Update stats display
+        function updateStats() {
+            document.getElementById('totalRolls').textContent = totalRolls.toLocaleString();
+            document.getElementById('totalValue').textContent = totalValue.toLocaleString();
+            document.getElementById('bestItem').textContent = bestItem ? bestItem.name : 'None';
+        }
+
+        // Bulk add items (removed - items are now hardcoded)
+        // To add items, edit the ITEM_IDS array at the top of the script
+
         // Initialize the app
-        document.addEventListener('DOMContentLoaded', () => {
-            initializeGame();
+        document.addEventListener('DOMContentLoaded', function() {
+            loadItems();
+            
+            // Show message if no items in the hardcoded table
+            if (items.length === 0) {
+                showMessage('No items found! Edit the ITEM_IDS array in the code to add items.', 'error');
+            }
         });
     </script>
 </body>
