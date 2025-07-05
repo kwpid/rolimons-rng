@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Rolimons RNG Game</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎲</text></svg>">
     <style>
         * {
             margin: 0;
@@ -402,9 +403,102 @@
         let bestRolls = [];
         let isRolling = false;
 
-        // CORS proxy to handle API requests
-        const CORS_PROXY = 'https://cors-anywhere.herokuapp.com/';
+        // API endpoints
         const ROLIMONS_API = 'https://www.rolimons.com/api/items';
+        
+        // Fallback data for when API is not accessible
+        const FALLBACK_ITEMS = [
+            {
+                id: 1,
+                name: "Dominus Empyreus",
+                value: 500000,
+                rap: 450000,
+                image: "https://via.placeholder.com/100x100/58a6ff/ffffff?text=DE",
+                owners: 150,
+                stock: 150
+            },
+            {
+                id: 2,
+                name: "Sparkle Time Fedora",
+                value: 300000,
+                rap: 280000,
+                image: "https://via.placeholder.com/100x100/58a6ff/ffffff?text=STF",
+                owners: 200,
+                stock: 200
+            },
+            {
+                id: 3,
+                name: "Golden Crown",
+                value: 250000,
+                rap: 240000,
+                image: "https://via.placeholder.com/100x100/58a6ff/ffffff?text=GC",
+                owners: 180,
+                stock: 180
+            },
+            {
+                id: 4,
+                name: "Dominus Aureus",
+                value: 400000,
+                rap: 380000,
+                image: "https://via.placeholder.com/100x100/58a6ff/ffffff?text=DA",
+                owners: 120,
+                stock: 120
+            },
+            {
+                id: 5,
+                name: "Sparkle Time Fedora",
+                value: 350000,
+                rap: 320000,
+                image: "https://via.placeholder.com/100x100/58a6ff/ffffff?text=STF2",
+                owners: 160,
+                stock: 160
+            },
+            {
+                id: 6,
+                name: "Dominus Frigidus",
+                value: 600000,
+                rap: 550000,
+                image: "https://via.placeholder.com/100x100/58a6ff/ffffff?text=DF",
+                owners: 80,
+                stock: 80
+            },
+            {
+                id: 7,
+                name: "Sparkle Time Fedora",
+                value: 280000,
+                rap: 260000,
+                image: "https://via.placeholder.com/100x100/58a6ff/ffffff?text=STF3",
+                owners: 220,
+                stock: 220
+            },
+            {
+                id: 8,
+                name: "Dominus Vespertilio",
+                value: 450000,
+                rap: 420000,
+                image: "https://via.placeholder.com/100x100/58a6ff/ffffff?text=DV",
+                owners: 100,
+                stock: 100
+            },
+            {
+                id: 9,
+                name: "Sparkle Time Fedora",
+                value: 320000,
+                rap: 300000,
+                image: "https://via.placeholder.com/100x100/58a6ff/ffffff?text=STF4",
+                owners: 140,
+                stock: 140
+            },
+            {
+                id: 10,
+                name: "Dominus Infernus",
+                value: 700000,
+                rap: 650000,
+                image: "https://via.placeholder.com/100x100/58a6ff/ffffff?text=DI",
+                owners: 60,
+                stock: 60
+            }
+        ];
 
         // Tab switching
         function showTab(tabName) {
@@ -428,24 +522,64 @@
         // Fetch items from Rolimons API
         async function fetchItems() {
             try {
-                const response = await fetch(CORS_PROXY + ROLIMONS_API);
-                const data = await response.json();
+                // Try to fetch from Rolimons API directly
+                const response = await fetch(ROLIMONS_API, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+                    }
+                });
                 
-                if (data.items) {
-                    items = Object.values(data.items).filter(item => {
-                        // Filter for limited items with valid data
-                        return item && item.rap && item.value && item.rap > 0 && item.value > 0;
-                    });
+                if (response.ok) {
+                    const data = await response.json();
                     
-                    // Sort by value (highest first)
-                    items.sort((a, b) => b.value - a.value);
-                    
-                    displayInventory();
-                    displayChances();
+                    if (data.items) {
+                        items = Object.values(data.items).filter(item => {
+                            // Filter for limited items with valid data
+                            return item && item.rap && item.value && item.rap > 0 && item.value > 0;
+                        });
+                        
+                        // Sort by value (highest first)
+                        items.sort((a, b) => b.value - a.value);
+                        
+                        displayInventory();
+                        displayChances();
+                        showSuccess('Connected to Rolimons API successfully!');
+                        return;
+                    }
                 }
+                
+                // If API fails, use fallback data
+                throw new Error('API not accessible');
+                
             } catch (error) {
-                console.error('Error fetching items:', error);
-                showError('Failed to load items. Please try again later.');
+                console.log('Using fallback data due to CORS restrictions');
+                items = [...FALLBACK_ITEMS];
+                
+                // Add more variety to fallback data
+                for (let i = 11; i <= 50; i++) {
+                    const value = Math.floor(Math.random() * 800000) + 50000;
+                    const rap = Math.floor(value * 0.9);
+                    const owners = Math.floor(Math.random() * 250) + 1;
+                    
+                    items.push({
+                        id: i,
+                        name: `Limited Item ${i}`,
+                        value: value,
+                        rap: rap,
+                        image: `https://via.placeholder.com/100x100/58a6ff/ffffff?text=LI${i}`,
+                        owners: owners,
+                        stock: owners
+                    });
+                }
+                
+                // Sort by value (highest first)
+                items.sort((a, b) => b.value - a.value);
+                
+                displayInventory();
+                displayChances();
+                showSuccess('Using demo data. Real API data would be available with proper CORS setup.');
             }
         }
 
