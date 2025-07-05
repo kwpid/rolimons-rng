@@ -409,112 +409,14 @@
         const ITEM_LINKS = [
             // Format: "https://www.rolimons.com/item/ITEM_ID"
             // Example items (replace with actual Rolimons links):
-            "https://www.rolimons.com/item/136",
-            "https://www.rolimons.com/item/137", 
-            "https://www.rolimons.com/item/138",
-            "https://www.rolimons.com/item/139",
-            "https://www.rolimons.com/item/140",
-            "https://www.rolimons.com/item/141",
-            "https://www.rolimons.com/item/142",
-            "https://www.rolimons.com/item/143",
-            "https://www.rolimons.com/item/144",
-            "https://www.rolimons.com/item/145",
+            "https://www.rolimons.com/item/21070012",
+            "https://www.rolimons.com/item/48545806",
+            "https://www.rolimons.com/item/1031429",
+            "https://www.rolimons.com/item/124730194"
             // Add more item links here...
         ];
 
-        // Fallback data for when links are not accessible
-        const FALLBACK_ITEMS = [
-            {
-                id: 1,
-                name: "Dominus Empyreus",
-                value: 500000,
-                rap: 450000,
-                image: "https://via.placeholder.com/100x100/58a6ff/ffffff?text=DE",
-                owners: 150,
-                stock: 150
-            },
-            {
-                id: 2,
-                name: "Sparkle Time Fedora",
-                value: 300000,
-                rap: 280000,
-                image: "https://via.placeholder.com/100x100/58a6ff/ffffff?text=STF",
-                owners: 200,
-                stock: 200
-            },
-            {
-                id: 3,
-                name: "Golden Crown",
-                value: 250000,
-                rap: 240000,
-                image: "https://via.placeholder.com/100x100/58a6ff/ffffff?text=GC",
-                owners: 180,
-                stock: 180
-            },
-            {
-                id: 4,
-                name: "Dominus Aureus",
-                value: 400000,
-                rap: 380000,
-                image: "https://via.placeholder.com/100x100/58a6ff/ffffff?text=DA",
-                owners: 120,
-                stock: 120
-            },
-            {
-                id: 5,
-                name: "Sparkle Time Fedora",
-                value: 350000,
-                rap: 320000,
-                image: "https://via.placeholder.com/100x100/58a6ff/ffffff?text=STF2",
-                owners: 160,
-                stock: 160
-            },
-            {
-                id: 6,
-                name: "Dominus Frigidus",
-                value: 600000,
-                rap: 550000,
-                image: "https://via.placeholder.com/100x100/58a6ff/ffffff?text=DF",
-                owners: 80,
-                stock: 80
-            },
-            {
-                id: 7,
-                name: "Sparkle Time Fedora",
-                value: 280000,
-                rap: 260000,
-                image: "https://via.placeholder.com/100x100/58a6ff/ffffff?text=STF3",
-                owners: 220,
-                stock: 220
-            },
-            {
-                id: 8,
-                name: "Dominus Vespertilio",
-                value: 450000,
-                rap: 420000,
-                image: "https://via.placeholder.com/100x100/58a6ff/ffffff?text=DV",
-                owners: 100,
-                stock: 100
-            },
-            {
-                id: 9,
-                name: "Sparkle Time Fedora",
-                value: 320000,
-                rap: 300000,
-                image: "https://via.placeholder.com/100x100/58a6ff/ffffff?text=STF4",
-                owners: 140,
-                stock: 140
-            },
-            {
-                id: 10,
-                name: "Dominus Infernus",
-                value: 700000,
-                rap: 650000,
-                image: "https://via.placeholder.com/100x100/58a6ff/ffffff?text=DI",
-                owners: 60,
-                stock: 60
-            }
-        ];
+
 
         // Tab switching
         function showTab(tabName) {
@@ -557,55 +459,26 @@
         // Load initial items for display
         async function loadInitialItems() {
             try {
-                // Try to fetch items from the links table
+                // Fetch items from the links table
                 const fetchedItems = await fetchItemsFromLinks();
                 
                 if (fetchedItems.length > 0) {
                     // Cache all fetched items
                     fetchedItems.forEach(item => itemCache.set(item.id, item));
                     
-                    // Use first 20 items for initial display
-                    items = fetchedItems.slice(0, 20).sort((a, b) => b.value - a.value);
+                    // Use all items for display
+                    items = fetchedItems.sort((a, b) => b.value - a.value);
                     
                     displayInventory();
                     displayChances();
                     showSuccess(`Successfully loaded ${fetchedItems.length} items from Rolimons!`);
-                    return;
+                } else {
+                    showError('No items were loaded. Please check your ITEM_LINKS array.');
                 }
-                
-                throw new Error('No items fetched from links');
                 
             } catch (error) {
-                console.log('Using fallback data due to fetch issues');
-                
-                // Generate demo items and cache them
-                const demoItems = [...FALLBACK_ITEMS];
-                
-                for (let i = 11; i <= 200; i++) {
-                    const value = Math.floor(Math.random() * 800000) + 50000;
-                    const rap = Math.floor(value * 0.9);
-                    const owners = Math.floor(Math.random() * 250) + 1;
-                    
-                    const item = {
-                        id: i,
-                        name: `Limited Item ${i}`,
-                        value: value,
-                        rap: rap,
-                        image: `https://via.placeholder.com/100x100/58a6ff/ffffff?text=LI${i}`,
-                        owners: owners,
-                        stock: owners
-                    };
-                    
-                    demoItems.push(item);
-                    itemCache.set(i, item);
-                }
-                
-                // Use first 20 items for initial display
-                items = demoItems.slice(0, 20).sort((a, b) => b.value - a.value);
-                
-                displayInventory();
-                displayChances();
-                showSuccess('Using demo data. Add Rolimons item links to ITEM_LINKS array for real data.');
+                console.error('Error loading items:', error);
+                showError('Failed to load items. Please check your internet connection and item links.');
             }
         }
 
