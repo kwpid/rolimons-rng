@@ -1,1 +1,655 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rolimons RNG Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background-color: #0d1117;
+            color: #c9d1d9;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: #58a6ff;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .tabs {
+            display: flex;
+            background-color: #21262d;
+            border-radius: 8px;
+            padding: 4px;
+            margin-bottom: 30px;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 12px 20px;
+            background: none;
+            border: none;
+            color: #8b949e;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.2s;
+            font-size: 16px;
+            font-weight: 500;
+        }
+
+        .tab.active {
+            background-color: #30363d;
+            color: #c9d1d9;
+        }
+
+        .tab:hover:not(.active) {
+            background-color: #30363d;
+            color: #c9d1d9;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+
+        .rolling-section {
+            background-color: #21262d;
+            border-radius: 12px;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .roll-button {
+            background: linear-gradient(135deg, #58a6ff, #1f6feb);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 18px;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 20px;
+        }
+
+        .roll-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(88, 166, 255, 0.3);
+        }
+
+        .roll-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .rolling-animation {
+            width: 200px;
+            height: 200px;
+            margin: 20px auto;
+            border-radius: 12px;
+            background: linear-gradient(45deg, #30363d, #484f58);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: #58a6ff;
+            animation: spin 1s linear infinite;
+            display: none;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .current-roll {
+            background-color: #30363d;
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 20px;
+            display: none;
+        }
+
+        .item-image {
+            width: 100px;
+            height: 100px;
+            border-radius: 8px;
+            margin: 0 auto 15px;
+            display: block;
+        }
+
+        .item-name {
+            font-size: 18px;
+            font-weight: 600;
+            color: #58a6ff;
+            margin-bottom: 10px;
+        }
+
+        .item-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .stat {
+            background-color: #21262d;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .stat-label {
+            color: #8b949e;
+            font-size: 12px;
+            margin-bottom: 4px;
+        }
+
+        .best-rolls {
+            background-color: #21262d;
+            border-radius: 12px;
+            padding: 20px;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        .best-rolls h3 {
+            color: #58a6ff;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .best-roll-item {
+            background-color: #30363d;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .best-roll-image {
+            width: 60px;
+            height: 60px;
+            border-radius: 6px;
+            flex-shrink: 0;
+        }
+
+        .best-roll-info {
+            flex: 1;
+        }
+
+        .best-roll-name {
+            font-weight: 600;
+            color: #c9d1d9;
+            margin-bottom: 5px;
+        }
+
+        .best-roll-value {
+            color: #58a6ff;
+            font-weight: 600;
+        }
+
+        .inventory-section {
+            background-color: #21262d;
+            border-radius: 12px;
+            padding: 30px;
+        }
+
+        .inventory-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        .inventory-item {
+            background-color: #30363d;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+            transition: transform 0.2s;
+        }
+
+        .inventory-item:hover {
+            transform: translateY(-2px);
+        }
+
+        .inventory-image {
+            width: 80px;
+            height: 80px;
+            border-radius: 6px;
+            margin: 0 auto 10px;
+        }
+
+        .inventory-name {
+            font-weight: 600;
+            color: #c9d1d9;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .inventory-stats {
+            font-size: 12px;
+            color: #8b949e;
+        }
+
+        .chances-section {
+            background-color: #21262d;
+            border-radius: 12px;
+            padding: 30px;
+        }
+
+        .chances-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        .chance-item {
+            background-color: #30363d;
+            border-radius: 8px;
+            padding: 15px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .chance-image {
+            width: 60px;
+            height: 60px;
+            border-radius: 6px;
+            flex-shrink: 0;
+        }
+
+        .chance-info {
+            flex: 1;
+        }
+
+        .chance-name {
+            font-weight: 600;
+            color: #c9d1d9;
+            margin-bottom: 5px;
+        }
+
+        .chance-value {
+            color: #58a6ff;
+            font-weight: 600;
+        }
+
+        .chance-ratio {
+            color: #8b949e;
+            font-size: 14px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #8b949e;
+        }
+
+        .error {
+            background-color: #da3633;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .success {
+            background-color: #238636;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .tabs {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎲 Rolimons RNG Game</h1>
+            <p>Roll for Roblox Limiteds using real market data</p>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" onclick="showTab('main')">Main</button>
+            <button class="tab" onclick="showTab('inventory')">Inventory</button>
+            <button class="tab" onclick="showTab('chances')">Chances</button>
+        </div>
+
+        <!-- Main Tab -->
+        <div id="main" class="tab-content active">
+            <div class="main-content">
+                <div class="rolling-section">
+                    <button id="rollButton" class="roll-button" onclick="roll()">🎲 Roll for Items!</button>
+                    <div id="rollingAnimation" class="rolling-animation">🎲</div>
+                    <div id="currentRoll" class="current-roll"></div>
+                </div>
+                <div class="best-rolls">
+                    <h3>🏆 Best Rolls (250K+ Value)</h3>
+                    <div id="bestRollsList"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Inventory Tab -->
+        <div id="inventory" class="tab-content">
+            <div class="inventory-section">
+                <h3>📦 Available Items</h3>
+                <div id="inventoryGrid" class="inventory-grid">
+                    <div class="loading">Loading inventory...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chances Tab -->
+        <div id="chances" class="tab-content">
+            <div class="chances-section">
+                <h3>📊 Roll Chances</h3>
+                <div id="chancesGrid" class="chances-grid">
+                    <div class="loading">Loading chances...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let items = [];
+        let bestRolls = [];
+        let isRolling = false;
+
+        // CORS proxy to handle API requests
+        const CORS_PROXY = 'https://cors-anywhere.herokuapp.com/';
+        const ROLIMONS_API = 'https://www.rolimons.com/api/items';
+
+        // Tab switching
+        function showTab(tabName) {
+            // Hide all tab contents
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            // Remove active class from all tabs
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Show selected tab content
+            document.getElementById(tabName).classList.add('active');
+            
+            // Add active class to clicked tab
+            event.target.classList.add('active');
+        }
+
+        // Fetch items from Rolimons API
+        async function fetchItems() {
+            try {
+                const response = await fetch(CORS_PROXY + ROLIMONS_API);
+                const data = await response.json();
+                
+                if (data.items) {
+                    items = Object.values(data.items).filter(item => {
+                        // Filter for limited items with valid data
+                        return item && item.rap && item.value && item.rap > 0 && item.value > 0;
+                    });
+                    
+                    // Sort by value (highest first)
+                    items.sort((a, b) => b.value - a.value);
+                    
+                    displayInventory();
+                    displayChances();
+                }
+            } catch (error) {
+                console.error('Error fetching items:', error);
+                showError('Failed to load items. Please try again later.');
+            }
+        }
+
+        // Display inventory
+        function displayInventory() {
+            const grid = document.getElementById('inventoryGrid');
+            grid.innerHTML = '';
+
+            items.slice(0, 100).forEach(item => {
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'inventory-item';
+                
+                const stock = item.owners <= 250 ? item.owners : (item.stock || 'N/A');
+                
+                itemDiv.innerHTML = `
+                    <img src="${item.image}" alt="${item.name}" class="inventory-image" onerror="this.src='https://via.placeholder.com/80x80/30363d/8b949e?text=?'">
+                    <div class="inventory-name">${item.name}</div>
+                    <div class="inventory-stats">
+                        <div>Value: ${formatNumber(item.value)}</div>
+                        <div>RAP: ${formatNumber(item.rap)}</div>
+                        <div>Stock: ${stock}</div>
+                    </div>
+                `;
+                
+                grid.appendChild(itemDiv);
+            });
+        }
+
+        // Display chances
+        function displayChances() {
+            const grid = document.getElementById('chancesGrid');
+            grid.innerHTML = '';
+
+            items.slice(0, 50).forEach(item => {
+                const chance = Math.max(1, Math.floor(item.value / 50));
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'chance-item';
+                
+                itemDiv.innerHTML = `
+                    <img src="${item.image}" alt="${item.name}" class="chance-image" onerror="this.src='https://via.placeholder.com/60x60/30363d/8b949e?text=?'">
+                    <div class="chance-info">
+                        <div class="chance-name">${item.name}</div>
+                        <div class="chance-value">${formatNumber(item.value)}</div>
+                        <div class="chance-ratio">1 in ${chance}</div>
+                    </div>
+                `;
+                
+                grid.appendChild(itemDiv);
+            });
+        }
+
+        // Roll function
+        async function roll() {
+            if (isRolling || items.length === 0) return;
+            
+            isRolling = true;
+            const rollButton = document.getElementById('rollButton');
+            const rollingAnimation = document.getElementById('rollingAnimation');
+            const currentRoll = document.getElementById('currentRoll');
+            
+            rollButton.disabled = true;
+            rollingAnimation.style.display = 'flex';
+            currentRoll.style.display = 'none';
+            
+            // Simulate rolling animation
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            
+            // Select random item based on value-weighted probability
+            const selectedItem = selectRandomItem();
+            
+            // Display result
+            displayRollResult(selectedItem);
+            
+            // Check if it's a best roll
+            if (selectedItem.value >= 250000) {
+                addBestRoll(selectedItem);
+            }
+            
+            rollingAnimation.style.display = 'none';
+            currentRoll.style.display = 'block';
+            rollButton.disabled = false;
+            isRolling = false;
+        }
+
+        // Select random item with value-weighted probability
+        function selectRandomItem() {
+            const totalWeight = items.reduce((sum, item) => sum + (1 / Math.max(1, Math.floor(item.value / 50))), 0);
+            let random = Math.random() * totalWeight;
+            
+            for (const item of items) {
+                const weight = 1 / Math.max(1, Math.floor(item.value / 50));
+                random -= weight;
+                if (random <= 0) {
+                    return item;
+                }
+            }
+            
+            return items[0]; // Fallback
+        }
+
+        // Display roll result
+        function displayRollResult(item) {
+            const currentRoll = document.getElementById('currentRoll');
+            const stock = item.owners <= 250 ? item.owners : (item.stock || 'N/A');
+            
+            currentRoll.innerHTML = `
+                <img src="${item.image}" alt="${item.name}" class="item-image" onerror="this.src='https://via.placeholder.com/100x100/30363d/8b949e?text=?'">
+                <div class="item-name">${item.name}</div>
+                <div class="item-stats">
+                    <div class="stat">
+                        <div class="stat-label">Value</div>
+                        <div>${formatNumber(item.value)}</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-label">RAP</div>
+                        <div>${formatNumber(item.rap)}</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-label">Stock</div>
+                        <div>${stock}</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-label">Chance</div>
+                        <div>1 in ${Math.max(1, Math.floor(item.value / 50))}</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Add best roll
+        function addBestRoll(item) {
+            const existingIndex = bestRolls.findIndex(roll => roll.id === item.id);
+            if (existingIndex !== -1) {
+                bestRolls.splice(existingIndex, 1);
+            }
+            
+            bestRolls.unshift({
+                ...item,
+                timestamp: Date.now()
+            });
+            
+            // Keep only top 10 best rolls
+            bestRolls = bestRolls.slice(0, 10);
+            
+            displayBestRolls();
+        }
+
+        // Display best rolls
+        function displayBestRolls() {
+            const list = document.getElementById('bestRollsList');
+            list.innerHTML = '';
+            
+            bestRolls.forEach(roll => {
+                const rollDiv = document.createElement('div');
+                rollDiv.className = 'best-roll-item';
+                
+                rollDiv.innerHTML = `
+                    <img src="${roll.image}" alt="${roll.name}" class="best-roll-image" onerror="this.src='https://via.placeholder.com/60x60/30363d/8b949e?text=?'">
+                    <div class="best-roll-info">
+                        <div class="best-roll-name">${roll.name}</div>
+                        <div class="best-roll-value">${formatNumber(roll.value)}</div>
+                    </div>
+                `;
+                
+                list.appendChild(rollDiv);
+            });
+        }
+
+        // Format numbers with commas
+        function formatNumber(num) {
+            return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        }
+
+        // Show error message
+        function showError(message) {
+            const container = document.querySelector('.container');
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error';
+            errorDiv.textContent = message;
+            container.insertBefore(errorDiv, container.firstChild);
+            
+            setTimeout(() => {
+                errorDiv.remove();
+            }, 5000);
+        }
+
+        // Show success message
+        function showSuccess(message) {
+            const container = document.querySelector('.container');
+            const successDiv = document.createElement('div');
+            successDiv.className = 'success';
+            successDiv.textContent = message;
+            container.insertBefore(successDiv, container.firstChild);
+            
+            setTimeout(() => {
+                successDiv.remove();
+            }, 3000);
+        }
+
+        // Initialize the app
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchItems();
+            showSuccess('Welcome to Rolimons RNG Game! Click "Roll for Items!" to start.');
+        });
+    </script>
+</body>
+</html>
