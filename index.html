@@ -402,6 +402,8 @@
         let items = [];
         let bestRolls = [];
         let isRolling = false;
+        let itemCache = new Map(); // Cache for loaded items
+        let rollHistory = []; // Track items shown during rolling animation
 
         // API endpoints
         const ROLIMONS_API = 'https://www.rolimons.com/api/items';
@@ -519,8 +521,27 @@
             event.target.classList.add('active');
         }
 
-        // Fetch items from Rolimons API
-        async function fetchItems() {
+        // Initialize with minimal data
+        async function initializeGame() {
+            // Load cached items from session storage
+            const cachedItems = sessionStorage.getItem('rolimonsRngCache');
+            if (cachedItems) {
+                try {
+                    const parsed = JSON.parse(cachedItems);
+                    itemCache = new Map(parsed);
+                    console.log(`Loaded ${itemCache.size} cached items`);
+                } catch (e) {
+                    console.log('Failed to load cache, starting fresh');
+                }
+            }
+            
+            // Load a small initial set for display
+            await loadInitialItems();
+            showSuccess('RNG Game ready! Click "Roll for Items!" to start.');
+        }
+
+        // Load initial items for display
+        async function loadInitialItems() {
             try {
                 // Try to fetch from Rolimons API directly
                 const response = await fetch(ROLIMONS_API, {
@@ -535,13 +556,15 @@
                     const data = await response.json();
                     
                     if (data.items) {
-                        items = Object.values(data.items).filter(item => {
-                            // Filter for limited items with valid data
+                        const allItems = Object.values(data.items).filter(item => {
                             return item && item.rap && item.value && item.rap > 0 && item.value > 0;
                         });
                         
-                        // Sort by value (highest first)
-                        items.sort((a, b) => b.value - a.value);
+                        // Cache all items
+                        allItems.forEach(item => itemCache.set(item.id, item));
+                        
+                        // Use first 20 items for initial display
+                        items = allItems.slice(0, 20).sort((a, b) => b.value - a.value);
                         
                         displayInventory();
                         displayChances();
@@ -550,20 +573,20 @@
                     }
                 }
                 
-                // If API fails, use fallback data
                 throw new Error('API not accessible');
                 
             } catch (error) {
                 console.log('Using fallback data due to CORS restrictions');
-                items = [...FALLBACK_ITEMS];
                 
-                // Add more variety to fallback data
-                for (let i = 11; i <= 50; i++) {
+                // Generate demo items and cache them
+                const demoItems = [...FALLBACK_ITEMS];
+                
+                for (let i = 11; i <= 200; i++) {
                     const value = Math.floor(Math.random() * 800000) + 50000;
                     const rap = Math.floor(value * 0.9);
                     const owners = Math.floor(Math.random() * 250) + 1;
                     
-                    items.push({
+                    const item = {
                         id: i,
                         name: `Limited Item ${i}`,
                         value: value,
@@ -571,15 +594,28 @@
                         image: `https://via.placeholder.com/100x100/58a6ff/ffffff?text=LI${i}`,
                         owners: owners,
                         stock: owners
-                    });
+                    };
+                    
+                    demoItems.push(item);
+                    itemCache.set(i, item);
                 }
                 
-                // Sort by value (highest first)
-                items.sort((a, b) => b.value - a.value);
+                // Use first 20 items for initial display
+                items = demoItems.slice(0, 20).sort((a, b) => b.value - a.value);
                 
                 displayInventory();
                 displayChances();
                 showSuccess('Using demo data. Real API data would be available with proper CORS setup.');
+            }
+        }
+
+        // Save cache to session storage
+        function saveCache() {
+            try {
+                const cacheArray = Array.from(itemCache.entries());
+                sessionStorage.setItem('rolimonsRngCache', JSON.stringify(cacheArray));
+            } catch (e) {
+                console.log('Failed to save cache');
             }
         }
 
@@ -631,9 +667,9 @@
             });
         }
 
-        // Roll function
+        // Roll function with dynamic animation
         async function roll() {
-            if (isRolling || items.length === 0) return;
+            if (isRolling) return;
             
             isRolling = true;
             const rollButton = document.getElementById('rollButton');
@@ -644,13 +680,19 @@
             rollingAnimation.style.display = 'flex';
             currentRoll.style.display = 'none';
             
-            // Simulate rolling animation
-            await new Promise(resolve => setTimeout(resolve, 2000));
+            // Clear previous roll history
+            rollHistory = [];
             
-            // Select random item based on value-weighted probability
+            // Generate random items for rolling animation
+            await generateRollingItems();
+            
+            // Simulate rolling animation with random items
+            await performRollingAnimation();
+            
+            // Select final item based on value-weighted probability
             const selectedItem = selectRandomItem();
             
-            // Display result
+            // Display final result
             displayRollResult(selectedItem);
             
             // Check if it's a best roll
@@ -662,14 +704,92 @@
             currentRoll.style.display = 'block';
             rollButton.disabled = false;
             isRolling = false;
+            
+            // Save cache after roll
+            saveCache();
         }
 
-        // Select random item with value-weighted probability
+        // Generate random items for rolling animation
+        async function generateRollingItems() {
+            const numItems = 15; // Number of items to show during animation
+            
+            for (let i = 0; i < numItems; i++) {
+                const item = await getRandomItem();
+                rollHistory.push(item);
+            }
+        }
+
+        // Get a random item (either from cache or generate new)
+        async function getRandomItem() {
+            // 70% chance to get from cache, 30% chance to generate new
+            if (itemCache.size > 0 && Math.random() < 0.7) {
+                const cachedItems = Array.from(itemCache.values());
+                return cachedItems[Math.floor(Math.random() * cachedItems.length)];
+            } else {
+                return generateNewItem();
+            }
+        }
+
+        // Generate a new random item
+        function generateNewItem() {
+            const value = Math.floor(Math.random() * 800000) + 50000;
+            const rap = Math.floor(value * 0.9);
+            const owners = Math.floor(Math.random() * 250) + 1;
+            const id = Date.now() + Math.random(); // Unique ID
+            
+            const item = {
+                id: id,
+                name: `Limited Item ${Math.floor(Math.random() * 1000)}`,
+                value: value,
+                rap: rap,
+                image: `https://via.placeholder.com/100x100/58a6ff/ffffff?text=LI${Math.floor(Math.random() * 100)}`,
+                owners: owners,
+                stock: owners
+            };
+            
+            // Cache the new item
+            itemCache.set(id, item);
+            return item;
+        }
+
+        // Perform the rolling animation
+        async function performRollingAnimation() {
+            const rollingAnimation = document.getElementById('rollingAnimation');
+            const duration = 2000; // 2 seconds
+            const interval = 100; // Change item every 100ms
+            const steps = duration / interval;
+            
+            for (let i = 0; i < steps; i++) {
+                const item = rollHistory[i % rollHistory.length];
+                displayRollingItem(item);
+                await new Promise(resolve => setTimeout(resolve, interval));
+            }
+        }
+
+        // Display item during rolling animation
+        function displayRollingItem(item) {
+            const rollingAnimation = document.getElementById('rollingAnimation');
+            rollingAnimation.innerHTML = `
+                <div style="text-align: center;">
+                    <img src="${item.image}" alt="${item.name}" style="width: 80px; height: 80px; border-radius: 8px; margin-bottom: 10px;" onerror="this.src='https://via.placeholder.com/80x80/30363d/8b949e?text=?'">
+                    <div style="font-size: 14px; color: #58a6ff; font-weight: 600;">${item.name}</div>
+                    <div style="font-size: 12px; color: #8b949e;">${formatNumber(item.value)}</div>
+                </div>
+            `;
+        }
+
+        // Select random item with value-weighted probability from all cached items
         function selectRandomItem() {
-            const totalWeight = items.reduce((sum, item) => sum + (1 / Math.max(1, Math.floor(item.value / 50))), 0);
+            const allItems = Array.from(itemCache.values());
+            
+            if (allItems.length === 0) {
+                return generateNewItem();
+            }
+            
+            const totalWeight = allItems.reduce((sum, item) => sum + (1 / Math.max(1, Math.floor(item.value / 50))), 0);
             let random = Math.random() * totalWeight;
             
-            for (const item of items) {
+            for (const item of allItems) {
                 const weight = 1 / Math.max(1, Math.floor(item.value / 50));
                 random -= weight;
                 if (random <= 0) {
@@ -677,7 +797,7 @@
                 }
             }
             
-            return items[0]; // Fallback
+            return allItems[0]; // Fallback
         }
 
         // Display roll result
@@ -781,8 +901,7 @@
 
         // Initialize the app
         document.addEventListener('DOMContentLoaded', () => {
-            fetchItems();
-            showSuccess('Welcome to Rolimons RNG Game! Click "Roll for Items!" to start.');
+            initializeGame();
         });
     </script>
 </body>
