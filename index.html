@@ -506,37 +506,58 @@
         // Fetch item data from Rolimon
         async function fetchItemData(itemId) {
             try {
-                // First try to get from Rolimon API
-                const response = await fetch(CORS_PROXY + encodeURIComponent(`${ROLIMON_API}/${itemId}`));
+                // Try to fetch from Rolimon's public API
+                const response = await fetch(CORS_PROXY + encodeURIComponent(`https://www.rolimons.com/api/items/${itemId}`));
                 if (!response.ok) {
                     throw new Error('Failed to fetch from Rolimon API');
                 }
                 
                 const data = await response.json();
                 
-                // If Rolimon API fails, use fallback data
-                if (!data || !data.name) {
+                // Check if we got valid data
+                if (data && data.name) {
                     return {
-                        name: `Item ${itemId}`,
-                        value: Math.floor(Math.random() * 1000) + 1,
-                        rap: Math.floor(Math.random() * 500) + 1,
+                        name: data.name,
+                        value: data.value || data.rap || 100,
+                        rap: data.rap || data.value || 100,
                         image: `https://www.rolimons.com/itemimages/${itemId}.png`
                     };
                 }
                 
-                return {
-                    name: data.name || `Item ${itemId}`,
-                    value: data.value || Math.floor(Math.random() * 1000) + 1,
-                    rap: data.rap || Math.floor(Math.random() * 500) + 1,
-                    image: data.image || `https://www.rolimons.com/itemimages/${itemId}.png`
-                };
+                // If no valid data, try scraping the item page
+                const pageResponse = await fetch(CORS_PROXY + encodeURIComponent(`https://www.rolimons.com/item/${itemId}`));
+                if (pageResponse.ok) {
+                    const html = await pageResponse.text();
+                    
+                    // Extract name from HTML
+                    const nameMatch = html.match(/<h1[^>]*>([^<]+)<\/h1>/);
+                    const name = nameMatch ? nameMatch[1].trim() : `Item ${itemId}`;
+                    
+                    // Extract RAP from HTML
+                    const rapMatch = html.match(/RAP[^>]*>([^<]+)</);
+                    const rap = rapMatch ? parseInt(rapMatch[1].replace(/,/g, '')) || 100 : 100;
+                    
+                    // Extract Value from HTML
+                    const valueMatch = html.match(/Value[^>]*>([^<]+)</);
+                    const value = valueMatch ? parseInt(valueMatch[1].replace(/,/g, '')) || rap : rap;
+                    
+                    return {
+                        name: name,
+                        value: value,
+                        rap: rap,
+                        image: `https://www.rolimons.com/itemimages/${itemId}.png`
+                    };
+                }
+                
+                throw new Error('Could not fetch item data');
+                
             } catch (error) {
-                console.log('Using fallback data for item:', itemId);
+                console.log('Using fallback data for item:', itemId, error);
                 // Fallback data if API fails
                 return {
                     name: `Item ${itemId}`,
-                    value: Math.floor(Math.random() * 1000) + 1,
-                    rap: Math.floor(Math.random() * 500) + 1,
+                    value: 100,
+                    rap: 100,
                     image: `https://www.rolimons.com/itemimages/${itemId}.png`
                 };
             }
@@ -563,7 +584,7 @@
                 const row = document.createElement('tr');
                 const chance = Math.max(1, Math.floor(50 / item.value));
                 row.innerHTML = `
-                    <td><img src="${item.image}" alt="${item.name}" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiByeD0iNSIgZmlsbD0icmdiYSgyNTUsMjU1LDIU1LDAuMSkiLz4KPC9zdmc+Cg=='"></td>
+                    <td><img src="${item.image}" alt="${item.name}" onerror="this.src='https://via.placeholder.com/40x40/2a2a2a/666666?text=?'" style="width: 40px; height: 40px; border-radius: 5px;"></td>
                     <td>${item.name}</td>
                     <td>${item.value.toLocaleString()}</td>
                     <td>${item.rap.toLocaleString()}</td>
@@ -614,7 +635,7 @@
             
             // Update roll display
             rollItem.innerHTML = `
-                <img src="${selectedItem.image}" alt="${selectedItem.name}" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIwIiBoZWlnaHQ9IjEyMCIgdmlld0JveD0iMCAwIDEyMCAxMjAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxMjAiIGhlaWdodD0iMTIwIiByeD0iMTUiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsMC4xKSIvPgo8L3N2Zz4K'">
+                <img src="${selectedItem.image}" alt="${selectedItem.name}" onerror="this.src='https://via.placeholder.com/120x120/2a2a2a/666666?text=?'" style="width: 120px; height: 120px; border-radius: 15px; margin-bottom: 15px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);">
                 <h3>${selectedItem.name}</h3>
                 <div class="value">Value: ${selectedItem.value.toLocaleString()}</div>
             `;
@@ -677,7 +698,7 @@
                 const itemDiv = document.createElement('div');
                 itemDiv.className = 'inventory-item';
                 itemDiv.innerHTML = `
-                    <img src="${item.image}" alt="${item.name}" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAiIGhlaWdodD0iODAiIHZpZXdCb3g9IjAgMCA4MCA4MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjgwIiBoZWlnaHQ9IjgwIiByeD0iMTAiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsMC4xKSIvPgo8L3N2Zz4K'">
+                    <img src="${item.image}" alt="${item.name}" onerror="this.src='https://via.placeholder.com/80x80/2a2a2a/666666?text=?'" style="width: 80px; height: 80px; border-radius: 10px; margin-bottom: 10px;">
                     <h4>${item.name}</h4>
                     <div class="value">${item.value.toLocaleString()}</div>
                 `;
